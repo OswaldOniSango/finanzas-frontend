@@ -63,7 +63,7 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
  */
 export const api = {
   // Autenticación
-  hasSession: () => Boolean(sessionStorage.getItem(TOKEN_KEY)),
+  hasSession: () => Boolean(sessionStorage.getItem(TOKEN_KEY) && sessionStorage.getItem(ROLE_KEY)),
   getRole: () => sessionStorage.getItem(ROLE_KEY) as UserRole | null,
   onUnauthorized: (listener: () => void) => {
     window.addEventListener(UNAUTHORIZED_EVENT, listener)
