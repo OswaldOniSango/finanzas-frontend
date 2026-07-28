@@ -12,25 +12,42 @@ import type {
   SavePlanAllocationRequest,
   UpdateApartmentGoalRequest,
   UpdateIncomeRequest,
+  AppUser,
+  UserRole,
 } from './types'
 
 const BASE = '/api'
+const TOKEN_KEY = 'finanzas.jwt'
+const ROLE_KEY = 'finanzas.role'
+const UNAUTHORIZED_EVENT = 'finanzas:unauthorized'
 
-class ApiError extends Error {
+export class ApiError extends Error {
   constructor(message: string, readonly status: number) {
     super(message)
   }
 }
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
+  const headers = new Headers(init?.headers)
+  headers.set('Content-Type', 'application/json')
+  const token = sessionStorage.getItem(TOKEN_KEY)
+  if (token) headers.set('Authorization', `Bearer ${token}`)
+
   const response = await fetch(`${BASE}${path}`, {
-    headers: { 'Content-Type': 'application/json' },
     ...init,
+    headers,
   })
 
   if (!response.ok) {
+    if (response.status === 401 && path !== '/auth/login') {
+      sessionStorage.removeItem(TOKEN_KEY)
+      window.dispatchEvent(new Event(UNAUTHORIZED_EVENT))
+    }
     const body = await response.json().catch(() => null)
-    throw new ApiError(body?.message ?? `Error ${response.status}`, response.status)
+    throw new ApiError(
+      body?.message ?? (response.status === 401 ? 'Usuario o contraseña incorrectos' : `Error ${response.status}`),
+      response.status,
+    )
   }
 
   if (response.status === 204) {
@@ -45,6 +62,35 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
  * así que la pantalla activa se actualiza sin pedir el periodo entero.
  */
 export const api = {
+  // Autenticación
+  hasSession: () => Boolean(sessionStorage.getItem(TOKEN_KEY) && sessionStorage.getItem(ROLE_KEY)),
+  getRole: () => sessionStorage.getItem(ROLE_KEY) as UserRole | null,
+  onUnauthorized: (listener: () => void) => {
+    window.addEventListener(UNAUTHORIZED_EVENT, listener)
+    return () => window.removeEventListener(UNAUTHORIZED_EVENT, listener)
+  },
+  login: async (username: string, password: string) => {
+    const response = await request<{ accessToken: string; expiresIn: number; username: string; role: UserRole }>('/auth/login', {
+      method: 'POST',
+      body: JSON.stringify({ username, password }),
+    })
+    sessionStorage.setItem(TOKEN_KEY, response.accessToken)
+    sessionStorage.setItem(ROLE_KEY, response.role)
+    return response
+  },
+  logout: () => {
+    sessionStorage.removeItem(TOKEN_KEY)
+    sessionStorage.removeItem(ROLE_KEY)
+  },
+
+  // Usuarios (sólo administradores)
+  users: () => request<AppUser[]>('/users'),
+  createUser: (username: string, password: string, role: UserRole) =>
+    request<AppUser>('/users', {
+      method: 'POST',
+      body: JSON.stringify({ username, password, role }),
+    }),
+
   // Periodos
   listPeriods: () => request<PeriodRef[]>('/periods'),
   latestPeriod: () => request<PeriodRef>('/periods/latest'),
