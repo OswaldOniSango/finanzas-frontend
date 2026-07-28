@@ -13,6 +13,7 @@
 
   --series-1: #2a78d6;
   --series-2: #1baf7a;
+  --series-3: #d99018;
   --series-1-wash: rgba(42, 120, 214, 0.1);
 
   --good: #0ca30c;
@@ -44,6 +45,7 @@
 
     --series-1: #3987e5;
     --series-2: #199e70;
+    --series-3: #e2a43d;
     --series-1-wash: rgba(57, 135, 229, 0.14);
 
     --good-text: #0ca30c;
@@ -65,6 +67,7 @@
 
   --series-1: #3987e5;
   --series-2: #199e70;
+  --series-3: #e2a43d;
   --series-1-wash: rgba(57, 135, 229, 0.14);
 
   --good-text: #0ca30c;
@@ -192,6 +195,75 @@ h3 {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
   gap: 12px;
+}
+
+.flow-two-columns {
+  grid-template-columns: repeat(2, minmax(240px, 1fr));
+}
+
+.card-dollar-field {
+  background: var(--surface-sunken);
+  border-radius: var(--radius-sm);
+  display: grid;
+  gap: 12px;
+  grid-template-columns: repeat(2, minmax(220px, 1fr));
+  margin-bottom: 14px;
+  padding: 12px;
+}
+
+.exchange-callout {
+  align-items: center;
+  background: var(--surface-sunken);
+  border-radius: var(--radius);
+  display: flex;
+  gap: 28px;
+  justify-content: center;
+  padding: 22px;
+  text-align: center;
+}
+
+.exchange-label {
+  color: var(--text-secondary);
+  font-size: 13px;
+  margin-bottom: 3px;
+}
+
+.exchange-value {
+  font-size: 30px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+
+.exchange-arrow {
+  color: var(--text-muted);
+  font-size: 28px;
+}
+
+.flow-explanation {
+  color: var(--text-secondary);
+  font-size: 14px;
+  margin: 14px 0 0;
+  text-align: center;
+}
+
+@media (max-width: 620px) {
+  .flow-two-columns {
+    grid-template-columns: 1fr;
+  }
+
+  .exchange-callout {
+    align-items: stretch;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .card-dollar-field {
+    grid-template-columns: 1fr;
+  }
+
+  .exchange-arrow {
+    transform: rotate(90deg);
+  }
 }
 
 .tile {

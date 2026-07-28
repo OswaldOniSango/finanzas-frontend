@@ -1,5 +1,5 @@
 import { api } from '../api/client'
-import type { Currency, ExpenseLine, ExpenseType, SaveExpenseItemRequest } from '../api/types'
+import type { Currency, ExpenseLine, ExpenseType, PaymentMethod, SaveExpenseItemRequest } from '../api/types'
 import { EXPENSE_TYPE_LABELS, ars, percent, usdPrecise } from '../lib/format'
 import { useScreen } from '../lib/useScreen'
 import { ExpenseGroupsChart } from './charts/ExpenseGroupsChart'
@@ -8,6 +8,11 @@ import { NumberField, Panel, ScreenState, SelectField, TextField, Tile } from '.
 const CURRENCIES: { value: Currency; label: string }[] = [
   { value: 'ARS', label: 'ARS' },
   { value: 'USD', label: 'USD' },
+]
+
+const PAYMENT_METHODS: { value: PaymentMethod; label: string }[] = [
+  { value: 'DEBIT', label: 'Débito' },
+  { value: 'CREDIT', label: 'Crédito' },
 ]
 
 const TYPES = (Object.keys(EXPENSE_TYPE_LABELS) as ExpenseType[]).map((value) => ({
@@ -20,6 +25,7 @@ const toRequest = (line: ExpenseLine): SaveExpenseItemRequest => ({
   detail: line.detail,
   amount: line.amount,
   currency: line.currency,
+  paymentMethod: line.paymentMethod,
   expenseType: line.expenseType,
   expenseGroup: line.expenseGroup,
   note: line.note,
@@ -32,6 +38,17 @@ export function ExpensesView({ periodId }: { periodId: number }) {
   if (!expenses) return <ScreenState loading={loading} error={error} />
 
   const groupNames = Array.from(new Set(expenses.lines.map((line) => line.expenseGroup)))
+  const totalsByPaymentMethod = expenses.lines.reduce(
+    (totals, line) => {
+      totals[line.paymentMethod].ars += line.amountArs
+      totals[line.paymentMethod].usd += line.amountUsd
+      return totals
+    },
+    {
+      DEBIT: { ars: 0, usd: 0 },
+      CREDIT: { ars: 0, usd: 0 },
+    },
+  )
 
   const patch = (line: ExpenseLine, changes: Partial<SaveExpenseItemRequest>) =>
     run(() => api.updateExpense(periodId, line.id, { ...toRequest(line), ...changes }))
@@ -42,6 +59,16 @@ export function ExpensesView({ periodId }: { periodId: number }) {
 
       <div className="tile-grid">
         <Tile label="Total de gastos" value={usdPrecise(expenses.totalUsd)} hint={ars(expenses.totalArs)} />
+        <Tile
+          label="Pagado con débito"
+          value={usdPrecise(totalsByPaymentMethod.DEBIT.usd)}
+          hint={ars(totalsByPaymentMethod.DEBIT.ars)}
+        />
+        <Tile
+          label="Pagado con crédito"
+          value={usdPrecise(totalsByPaymentMethod.CREDIT.usd)}
+          hint={ars(totalsByPaymentMethod.CREDIT.ars)}
+        />
         <Tile
           label="Disponible después de gastos"
           value={usdPrecise(expenses.availableAfterExpensesUsd)}
@@ -69,7 +96,7 @@ export function ExpensesView({ periodId }: { periodId: number }) {
 
       <Panel
         title="Gastos mensuales"
-        note="Cargá cada gasto en su moneda original; la conversión se recalcula sola con el dólar de referencia."
+        note="Indicá si cada gasto se pagó con débito o crédito; la conversión se recalcula sola con el dólar de referencia."
         actions={
           <button
             disabled={busy}
@@ -80,6 +107,7 @@ export function ExpensesView({ periodId }: { periodId: number }) {
                   detail: null,
                   amount: 0,
                   currency: 'ARS',
+                  paymentMethod: 'DEBIT',
                   expenseType: 'VARIABLE',
                   expenseGroup: groupNames[0] ?? 'Otros',
                   note: null,
@@ -99,6 +127,7 @@ export function ExpensesView({ periodId }: { periodId: number }) {
                 <th>Detalle</th>
                 <th className="num">Monto</th>
                 <th>Moneda</th>
+                <th>Medio de pago</th>
                 <th>Tipo</th>
                 <th>Grupo</th>
                 <th className="num">ARS</th>
@@ -121,6 +150,15 @@ export function ExpensesView({ periodId }: { periodId: number }) {
                   </td>
                   <td>
                     <SelectField value={line.currency} options={CURRENCIES} disabled={busy} ariaLabel="Moneda" onCommit={(currency) => patch(line, { currency })} />
+                  </td>
+                  <td>
+                    <SelectField
+                      value={line.paymentMethod}
+                      options={PAYMENT_METHODS}
+                      disabled={busy}
+                      ariaLabel="Medio de pago"
+                      onCommit={(paymentMethod) => patch(line, { paymentMethod })}
+                    />
                   </td>
                   <td>
                     <SelectField value={line.expenseType} options={TYPES} disabled={busy} ariaLabel="Tipo" onCommit={(expenseType) => patch(line, { expenseType })} />
@@ -146,7 +184,7 @@ export function ExpensesView({ periodId }: { periodId: number }) {
               ))}
               {expenses.lines.length === 0 && (
                 <tr>
-                  <td colSpan={10} className="empty">
+                  <td colSpan={11} className="empty">
                     Todavía no cargaste gastos en este mes.
                   </td>
                 </tr>
@@ -154,7 +192,7 @@ export function ExpensesView({ periodId }: { periodId: number }) {
             </tbody>
             <tfoot>
               <tr>
-                <td colSpan={6}>Total</td>
+                <td colSpan={7}>Total</td>
                 <td className="num">{ars(expenses.totalArs)}</td>
                 <td className="num">{usdPrecise(expenses.totalUsd)}</td>
                 <td className="num">100%</td>

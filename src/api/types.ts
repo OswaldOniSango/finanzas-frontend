@@ -2,6 +2,8 @@ export type Currency = 'ARS' | 'USD'
 
 export type ExpenseType = 'ESENCIAL' | 'FAMILIAR' | 'PERSONAL' | 'DISCRECIONAL' | 'VARIABLE'
 
+export type PaymentMethod = 'DEBIT' | 'CREDIT'
+
 export type CardStatus = 'PENDIENTE' | 'EN_CURSO' | 'CANCELADA'
 
 export type PlanStage = 'SALIDA_DE_TARJETAS' | 'AHORRO_APARTAMENTO'
@@ -19,6 +21,8 @@ export interface IncomeSummary {
   salaryArs: number
   salaryUsd: number
   referenceRate: number
+  cardDollarRate: number
+  payoneerDollarRate: number
   salaryUsdInArs: number
   totalIncomeArs: number
   totalIncomeUsd: number
@@ -32,6 +36,7 @@ export interface ExpenseLine {
   detail: string | null
   amount: number
   currency: Currency
+  paymentMethod: PaymentMethod
   expenseType: ExpenseType
   expenseGroup: string
   note: string | null
@@ -190,6 +195,7 @@ export interface SaveExpenseItemRequest {
   detail: string | null
   amount: number
   currency: Currency
+  paymentMethod: PaymentMethod
   expenseType: ExpenseType
   expenseGroup: string
   note?: string | null
@@ -221,6 +227,8 @@ export interface UpdateIncomeRequest {
   salaryArs: number
   salaryUsd: number
   referenceRate: number
+  cardDollarRate: number
+  payoneerDollarRate: number
   conservativeBaseUsd: number
 }
 

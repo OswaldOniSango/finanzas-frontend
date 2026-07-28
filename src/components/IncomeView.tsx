@@ -13,7 +13,7 @@ export function IncomeView({ periodId }: { periodId: number }) {
   // La clave re-sincroniza el borrador con lo que quedó guardado en el servidor.
   return (
     <IncomeForm
-      key={`${data.salaryArs}-${data.salaryUsd}-${data.referenceRate}-${data.conservativeBaseUsd}`}
+      key={`${data.salaryArs}-${data.salaryUsd}-${data.referenceRate}-${data.cardDollarRate}-${data.payoneerDollarRate}-${data.conservativeBaseUsd}`}
       income={data}
       busy={busy}
       error={error}
@@ -37,6 +37,8 @@ function IncomeForm({
     salaryArs: income.salaryArs,
     salaryUsd: income.salaryUsd,
     referenceRate: income.referenceRate,
+    cardDollarRate: income.cardDollarRate,
+    payoneerDollarRate: income.payoneerDollarRate,
     conservativeBaseUsd: income.conservativeBaseUsd,
   }
 
@@ -46,6 +48,8 @@ function IncomeForm({
     draft.salaryArs !== saved.salaryArs ||
     draft.salaryUsd !== saved.salaryUsd ||
     draft.referenceRate !== saved.referenceRate ||
+    draft.cardDollarRate !== saved.cardDollarRate ||
+    draft.payoneerDollarRate !== saved.payoneerDollarRate ||
     draft.conservativeBaseUsd !== saved.conservativeBaseUsd
 
   const set = (key: keyof UpdateIncomeRequest) => (event: React.ChangeEvent<HTMLInputElement>) =>
@@ -57,7 +61,7 @@ function IncomeForm({
 
       <Panel
         title="Ingresos mensuales"
-        note="Estos cuatro valores mandan sobre todo el plan: cambiar el dólar de referencia recalcula gastos, tarjetas y proyección."
+        note="El dólar de referencia convierte el plan; el dólar tarjeta calcula cuánto cuestan en pesos los consumos de crédito en USD."
       >
         <div className="field-grid">
           <label className="field">
@@ -71,6 +75,16 @@ function IncomeForm({
           <label className="field">
             Dólar de referencia (ARS por USD)
             <input type="number" step="0.01" value={draft.referenceRate} onChange={set('referenceRate')} />
+          </label>
+          <label className="field">
+            Dólar tarjeta (ARS por USD)
+            <input type="number" step="0.01" value={draft.cardDollarRate} onChange={set('cardDollarRate')} />
+            <span className="field-hint">Cotización mensual para pagar en pesos los consumos de tarjeta en USD.</span>
+          </label>
+          <label className="field">
+            Dólar Payoneer → Santander (ARS por USD)
+            <input type="number" step="0.01" value={draft.payoneerDollarRate} onChange={set('payoneerDollarRate')} />
+            <span className="field-hint">Cotización neta que recibís al cambiar tus USD a pesos.</span>
           </label>
           <label className="field">
             Base conservadora del plan (USD)

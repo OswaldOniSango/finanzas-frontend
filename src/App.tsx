@@ -3,6 +3,7 @@ import { api } from './api/client'
 import type { PeriodRef } from './api/types'
 import { ApartmentView } from './components/ApartmentView'
 import { CardsView } from './components/CardsView'
+import { CashFlowView } from './components/CashFlowView'
 import { ExpensesView } from './components/ExpensesView'
 import { HistoryView } from './components/HistoryView'
 import { IncomeView } from './components/IncomeView'
@@ -13,6 +14,7 @@ const TABS = [
   { id: 'resumen', label: 'Resumen' },
   { id: 'ingresos', label: 'Ingresos' },
   { id: 'gastos', label: 'Gastos mensuales' },
+  { id: 'flujo', label: 'Flujo por moneda' },
   { id: 'plan', label: 'Plan mensual' },
   { id: 'tarjetas', label: 'Tarjetas' },
   { id: 'apartamento', label: 'Apartamento' },
@@ -126,6 +128,7 @@ export default function App() {
       {tab === 'resumen' && <SummaryView periodId={periodId} />}
       {tab === 'ingresos' && <IncomeView periodId={periodId} />}
       {tab === 'gastos' && <ExpensesView periodId={periodId} />}
+      {tab === 'flujo' && <CashFlowView periodId={periodId} />}
       {tab === 'plan' && <PlanView periodId={periodId} />}
       {tab === 'tarjetas' && <CardsView periodId={periodId} />}
       {tab === 'apartamento' && <ApartmentView periodId={periodId} />}
