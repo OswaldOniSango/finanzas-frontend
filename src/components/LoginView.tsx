@@ -21,6 +21,19 @@ export function LoginView({ onLogin }: { onLogin: () => void }) {
     }
   }
 
+  const enterDemo = async () => {
+    setBusy(true)
+    setError(null)
+    try {
+      await api.demoLogin()
+      onLogin()
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : 'No se pudo abrir la demostración')
+    } finally {
+      setBusy(false)
+    }
+  }
+
   return (
     <main className="login-page">
       <form className="login-card" onSubmit={(event) => void submit(event)}>
@@ -53,6 +66,11 @@ export function LoginView({ onLogin }: { onLogin: () => void }) {
         <button className="primary login-submit" disabled={busy || !username || !password}>
           {busy ? 'Ingresando…' : 'Ingresar'}
         </button>
+        <div className="login-divider"><span>o</span></div>
+        <button type="button" className="demo-login" disabled={busy} onClick={() => void enterDemo()}>
+          Ver demostración
+        </button>
+        <div className="login-demo-hint">Datos ficticios · acceso de solo lectura</div>
       </form>
     </main>
   )

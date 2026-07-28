@@ -10,7 +10,7 @@ export type PlanStage = 'SALIDA_DE_TARJETAS' | 'AHORRO_APARTAMENTO'
 
 export type AllocationRole = 'NONE' | 'PRESUPUESTO_GASTOS' | 'AHORRO_APARTAMENTO'
 
-export type UserRole = 'ADMIN' | 'USER'
+export type UserRole = 'ADMIN' | 'USER' | 'DEMO'
 
 export interface AppUser {
   id: number

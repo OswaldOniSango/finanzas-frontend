@@ -156,6 +156,34 @@ h3 {
   width: 100%;
 }
 
+.login-divider {
+  align-items: center;
+  color: var(--text-muted);
+  display: flex;
+  font-size: 12px;
+  gap: 10px;
+}
+
+.login-divider::before,
+.login-divider::after {
+  background: var(--border);
+  content: '';
+  height: 1px;
+  flex: 1;
+}
+
+.demo-login {
+  font-weight: 600;
+  width: 100%;
+}
+
+.login-demo-hint {
+  color: var(--text-muted);
+  font-size: 12px;
+  margin-top: -10px;
+  text-align: center;
+}
+
 .app-header {
   display: flex;
   flex-wrap: wrap;
@@ -187,6 +215,23 @@ h3 {
   gap: 4px;
   border-bottom: 1px solid var(--border);
   margin-bottom: 24px;
+}
+
+.demo-banner {
+  background: var(--series-1-wash);
+  border: 1px solid color-mix(in srgb, var(--series-1) 30%, transparent);
+  border-radius: var(--radius-sm);
+  color: var(--text-secondary);
+  font-size: 13px;
+  margin-bottom: 16px;
+  padding: 9px 12px;
+}
+
+.demo-content {
+  border: 0;
+  margin: 0;
+  min-width: 0;
+  padding: 0;
 }
 
 .tab {

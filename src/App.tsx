@@ -60,6 +60,7 @@ export default function App() {
 }
 
 function FinancialApp({ role, onLogout }: { role: UserRole | null; onLogout: () => void }) {
+  const demoMode = role === 'DEMO'
   const [periods, setPeriods] = useState<PeriodRef[]>([])
   const [periodId, setPeriodId] = useState<number | null>(null)
   const [tab, setTab] = useState<TabId>('resumen')
@@ -164,9 +165,11 @@ function FinancialApp({ role, onLogout }: { role: UserRole | null; onLogout: () 
               </option>
             ))}
           </select>
-          <button disabled={busy} onClick={() => void createNextPeriod()}>
-            Nuevo mes
-          </button>
+          {!demoMode && (
+            <button disabled={busy} onClick={() => void createNextPeriod()}>
+              Nuevo mes
+            </button>
+          )}
           <button className="ghost" onClick={onLogout}>
             Salir
           </button>
@@ -174,6 +177,11 @@ function FinancialApp({ role, onLogout }: { role: UserRole | null; onLogout: () 
       </header>
 
       {error && <div className="error-banner">{error}</div>}
+      {demoMode && (
+        <div className="demo-banner">
+          Modo demostración · Estás explorando datos ficticios en modo de solo lectura.
+        </div>
+      )}
 
       <nav className="tabs" role="tablist">
         {TABS.filter((item) => item.id !== 'usuarios' || role === 'ADMIN').map((item) => (
@@ -189,15 +197,17 @@ function FinancialApp({ role, onLogout }: { role: UserRole | null; onLogout: () 
         ))}
       </nav>
 
-      {tab === 'resumen' && <SummaryView periodId={periodId} />}
-      {tab === 'ingresos' && <IncomeView periodId={periodId} />}
-      {tab === 'gastos' && <ExpensesView periodId={periodId} />}
-      {tab === 'flujo' && <CashFlowView periodId={periodId} />}
-      {tab === 'plan' && <PlanView periodId={periodId} />}
-      {tab === 'tarjetas' && <CardsView periodId={periodId} />}
-      {tab === 'apartamento' && <ApartmentView periodId={periodId} />}
-      {tab === 'historico' && <HistoryView periodId={periodId} />}
-      {tab === 'usuarios' && role === 'ADMIN' && <UsersView />}
+      <fieldset className="demo-content" disabled={demoMode}>
+        {tab === 'resumen' && <SummaryView periodId={periodId} />}
+        {tab === 'ingresos' && <IncomeView periodId={periodId} />}
+        {tab === 'gastos' && <ExpensesView periodId={periodId} />}
+        {tab === 'flujo' && <CashFlowView periodId={periodId} />}
+        {tab === 'plan' && <PlanView periodId={periodId} />}
+        {tab === 'tarjetas' && <CardsView periodId={periodId} />}
+        {tab === 'apartamento' && <ApartmentView periodId={periodId} />}
+        {tab === 'historico' && <HistoryView periodId={periodId} />}
+        {tab === 'usuarios' && role === 'ADMIN' && <UsersView />}
+      </fieldset>
     </div>
   )
 }

@@ -22,6 +22,14 @@ const TOKEN_KEY = 'finanzas.jwt'
 const ROLE_KEY = 'finanzas.role'
 const UNAUTHORIZED_EVENT = 'finanzas:unauthorized'
 
+type LoginResult = { accessToken: string; expiresIn: number; username: string; role: UserRole }
+
+function saveSession(response: LoginResult) {
+  sessionStorage.setItem(TOKEN_KEY, response.accessToken)
+  sessionStorage.setItem(ROLE_KEY, response.role)
+  return response
+}
+
 export class ApiError extends Error {
   constructor(message: string, readonly status: number) {
     super(message)
@@ -71,14 +79,13 @@ export const api = {
     return () => window.removeEventListener(UNAUTHORIZED_EVENT, listener)
   },
   login: async (username: string, password: string) => {
-    const response = await request<{ accessToken: string; expiresIn: number; username: string; role: UserRole }>('/auth/login', {
+    const response = await request<LoginResult>('/auth/login', {
       method: 'POST',
       body: JSON.stringify({ username, password }),
     })
-    sessionStorage.setItem(TOKEN_KEY, response.accessToken)
-    sessionStorage.setItem(ROLE_KEY, response.role)
-    return response
+    return saveSession(response)
   },
+  demoLogin: async () => saveSession(await request<LoginResult>('/auth/demo', { method: 'POST' })),
   logout: () => {
     sessionStorage.removeItem(TOKEN_KEY)
     sessionStorage.removeItem(ROLE_KEY)
