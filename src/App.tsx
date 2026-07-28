@@ -1,14 +1,16 @@
 import { useCallback, useEffect, useState } from 'react'
 import { api } from './api/client'
-import type { PeriodRef } from './api/types'
+import type { PeriodRef, UserRole } from './api/types'
 import { ApartmentView } from './components/ApartmentView'
 import { CardsView } from './components/CardsView'
 import { CashFlowView } from './components/CashFlowView'
 import { ExpensesView } from './components/ExpensesView'
 import { HistoryView } from './components/HistoryView'
 import { IncomeView } from './components/IncomeView'
+import { LoginView } from './components/LoginView'
 import { PlanView } from './components/PlanView'
 import { SummaryView } from './components/SummaryView'
+import { UsersView } from './components/UsersView'
 
 const TABS = [
   { id: 'resumen', label: 'Resumen' },
@@ -19,6 +21,7 @@ const TABS = [
   { id: 'tarjetas', label: 'Tarjetas' },
   { id: 'apartamento', label: 'Apartamento' },
   { id: 'historico', label: 'Histórico' },
+  { id: 'usuarios', label: 'Usuarios' },
 ] as const
 
 type TabId = (typeof TABS)[number]['id']
@@ -29,11 +32,40 @@ type TabId = (typeof TABS)[number]['id']
  * exactamente lo que esa pantalla dibuja y nada más.
  */
 export default function App() {
+  const [authenticated, setAuthenticated] = useState(api.hasSession())
+  const [role, setRole] = useState<UserRole | null>(api.getRole())
+
+  useEffect(() => api.onUnauthorized(() => {
+    setAuthenticated(false)
+    setRole(null)
+  }), [])
+
+  if (!authenticated) {
+    return <LoginView onLogin={() => {
+      setAuthenticated(true)
+      setRole(api.getRole())
+    }} />
+  }
+
+  return (
+    <FinancialApp
+      role={role}
+      onLogout={() => {
+        api.logout()
+        setAuthenticated(false)
+        setRole(null)
+      }}
+    />
+  )
+}
+
+function FinancialApp({ role, onLogout }: { role: UserRole | null; onLogout: () => void }) {
   const [periods, setPeriods] = useState<PeriodRef[]>([])
   const [periodId, setPeriodId] = useState<number | null>(null)
   const [tab, setTab] = useState<TabId>('resumen')
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [periodsLoaded, setPeriodsLoaded] = useState(false)
 
   useEffect(() => {
     let cancelled = false
@@ -48,9 +80,27 @@ export default function App() {
       .catch((cause) => {
         if (!cancelled) setError(cause instanceof Error ? cause.message : 'No se pudo conectar con la API')
       })
+      .finally(() => {
+        if (!cancelled) setPeriodsLoaded(true)
+      })
 
     return () => {
       cancelled = true
+    }
+  }, [])
+
+  const createFirstPeriod = useCallback(async () => {
+    const now = new Date()
+    setBusy(true)
+    setError(null)
+    try {
+      const created = await api.createPeriod(now.getFullYear(), now.getMonth() + 1, null)
+      setPeriods(await api.listPeriods())
+      setPeriodId(created.id)
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : 'No se pudo crear el primer mes')
+    } finally {
+      setBusy(false)
     }
   }, [])
 
@@ -77,7 +127,18 @@ export default function App() {
     return (
       <div className="app">
         <h1 className="app-title">Plan financiero</h1>
-        {error ? <div className="error-banner">{error}</div> : <p className="empty">Cargando…</p>}
+        {error ? (
+          <div className="error-banner">{error}</div>
+        ) : !periodsLoaded ? (
+          <p className="empty">Cargando…</p>
+        ) : (
+          <div className="empty-state">
+            <p>Todavía no tenés ningún mes cargado.</p>
+            <button className="primary" disabled={busy} onClick={() => void createFirstPeriod()}>
+              Crear mi primer mes
+            </button>
+          </div>
+        )}
       </div>
     )
   }
@@ -106,13 +167,16 @@ export default function App() {
           <button disabled={busy} onClick={() => void createNextPeriod()}>
             Nuevo mes
           </button>
+          <button className="ghost" onClick={onLogout}>
+            Salir
+          </button>
         </div>
       </header>
 
       {error && <div className="error-banner">{error}</div>}
 
       <nav className="tabs" role="tablist">
-        {TABS.map((item) => (
+        {TABS.filter((item) => item.id !== 'usuarios' || role === 'ADMIN').map((item) => (
           <button
             key={item.id}
             className="tab"
@@ -133,6 +197,7 @@ export default function App() {
       {tab === 'tarjetas' && <CardsView periodId={periodId} />}
       {tab === 'apartamento' && <ApartmentView periodId={periodId} />}
       {tab === 'historico' && <HistoryView periodId={periodId} />}
+      {tab === 'usuarios' && role === 'ADMIN' && <UsersView />}
     </div>
   )
 }
