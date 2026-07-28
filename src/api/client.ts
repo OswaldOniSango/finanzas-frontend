@@ -16,7 +16,8 @@ import type {
   UserRole,
 } from './types'
 
-const BASE = '/api'
+const API_ORIGIN = (import.meta.env.VITE_API_URL as string | undefined)?.replace(/\/$/, '') ?? ''
+const BASE = `${API_ORIGIN}/api`
 const TOKEN_KEY = 'finanzas.jwt'
 const ROLE_KEY = 'finanzas.role'
 const UNAUTHORIZED_EVENT = 'finanzas:unauthorized'
