@@ -311,6 +311,25 @@ h3 {
   margin-top: 18px;
 }
 
+.actuals-derived {
+  background: var(--surface-sunken);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: 12px 14px;
+}
+
+.actuals-derived span,
+.actuals-derived small {
+  color: var(--text-secondary);
+}
+
+.actuals-derived strong {
+  font-size: 20px;
+}
+
 .actuals-notes textarea {
   min-height: 90px;
 }

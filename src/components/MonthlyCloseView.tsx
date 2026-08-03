@@ -46,11 +46,19 @@ export function MonthlyCloseView({ periodId }: { periodId: number }) {
 
   const { income, expenses, actuals } = data
   const patch = (changes: Partial<MonthlyActuals>) =>
-    run(async () => ({
-      income,
-      expenses,
-      actuals: await api.updateMonthlyActuals(periodId, { ...actuals, ...changes }),
-    }))
+    run(async () => {
+      const next = { ...actuals, ...changes }
+      return {
+        income,
+        expenses,
+        actuals: await api.updateMonthlyActuals(periodId, {
+          actualPayoneerRate: next.actualPayoneerRate,
+          usdExchanged: next.usdExchanged,
+          cardPaymentsArs: next.cardPaymentsArs,
+          notes: next.notes,
+        }),
+      }
+    })
 
   const rentArs = expenses.lines
     .filter((line) => line.currency === 'ARS' && isRent(line))
@@ -65,18 +73,15 @@ export function MonthlyCloseView({ periodId }: { periodId: number }) {
     ? plannedArsMissing / income.payoneerDollarRate
     : 0
 
-  const effectiveRate = actuals.usdExchanged > 0
-    ? actuals.arsReceived / actuals.usdExchanged
-    : 0
+  const effectiveRate = actuals.actualPayoneerRate
   const exchangeDeviationUsd = actuals.usdExchanged - plannedUsdExchange
   const exchangeDeviationArs = actuals.arsReceived - plannedArsMissing
-  const cardsDeviationArs = actuals.cardPaymentsArs - plannedCardsArs
-  const cardsDeviationUsd = actuals.cardPaymentsUsd - plannedCardsUsd
-  const cardsDeviationEquivalentUsd = cardsDeviationUsd +
-    (income.referenceRate > 0 ? cardsDeviationArs / income.referenceRate : 0)
-  const hasActuals = actuals.usdExchanged > 0 || actuals.arsReceived > 0 ||
-    actuals.cardPaymentsArs > 0 || actuals.cardPaymentsUsd > 0
-  const outsidePlan = exchangeDeviationUsd > 0.01 || cardsDeviationEquivalentUsd > 0.01
+  const plannedCardsEquivalentUsd = income.payoneerDollarRate > 0
+    ? plannedCardsInArs / income.payoneerDollarRate
+    : 0
+  const cardsDeviationEquivalentUsd = actuals.cardPaymentsUsd - plannedCardsEquivalentUsd
+  const hasActuals = effectiveRate > 0 && (actuals.usdExchanged > 0 || actuals.cardPaymentsArs > 0)
+  const outsidePlan = hasActuals && (exchangeDeviationUsd > 0.01 || cardsDeviationEquivalentUsd > 0.01)
 
   const adjustment = !hasActuals
     ? 'Cargá los importes reales al terminar el mes para obtener el análisis.'
@@ -96,21 +101,16 @@ export function MonthlyCloseView({ periodId }: { periodId: number }) {
           value={!hasActuals ? 'Pendiente' : outsidePlan ? 'Fuera del plan' : 'Dentro del plan'}
           tone={!hasActuals ? undefined : outsidePlan ? 'bad' : 'good'}
         />
+        <Tile label="USD que cambiaste" value={hasActuals ? usdPrecise(actuals.usdExchanged) : '—'} hint={hasActuals ? `Plan: ${usdPrecise(plannedUsdExchange)} · Desvío ${signedUsd(exchangeDeviationUsd)}` : 'Falta cargar el cierre'} tone={!hasActuals ? undefined : exchangeDeviationUsd <= 0 ? 'good' : 'bad'} />
         <Tile
-          label="USD cambiados de más"
-          value={signedUsd(exchangeDeviationUsd)}
-          hint={`Plan: ${usdPrecise(plannedUsdExchange)} · Real: ${usdPrecise(actuals.usdExchanged)}`}
-          tone={exchangeDeviationUsd <= 0 ? 'good' : 'bad'}
-        />
-        <Tile
-          label="Desvío en tarjetas"
-          value={signedUsd(cardsDeviationEquivalentUsd)}
-          hint="Equivalente en USD al dólar de referencia"
-          tone={cardsDeviationEquivalentUsd <= 0 ? 'good' : 'bad'}
+          label="Gasto real en tarjetas"
+          value={hasActuals ? usdPrecise(actuals.cardPaymentsUsd) : '—'}
+          hint={hasActuals ? `Pagaste ${ars(actuals.cardPaymentsArs)} · Desvío ${signedUsd(cardsDeviationEquivalentUsd)}` : 'Se calcula desde el pago en ARS'}
+          tone={!hasActuals ? undefined : cardsDeviationEquivalentUsd <= 0 ? 'good' : 'bad'}
         />
         <Tile
           label="Cotización efectiva"
-          value={effectiveRate > 0 ? ars(effectiveRate) : '—'}
+          value={hasActuals ? ars(effectiveRate) : '—'}
           hint={`Plan Payoneer: ${ars(income.payoneerDollarRate)}`}
           tone={effectiveRate === 0 ? undefined : effectiveRate >= income.payoneerDollarRate ? 'good' : 'bad'}
         />
@@ -122,21 +122,27 @@ export function MonthlyCloseView({ periodId }: { periodId: number }) {
       >
         <div className="actuals-form-grid">
           <label className="field">
-            USD que terminaste cambiando
-            <NumberField value={actuals.usdExchanged} disabled={busy} ariaLabel="USD realmente cambiados" onCommit={(usdExchanged) => patch({ usdExchanged })} />
+            Dólar Payoneer real (ARS por USD)
+            <NumberField value={actuals.actualPayoneerRate} disabled={busy} ariaLabel="Dólar Payoneer real" onCommit={(actualPayoneerRate) => patch({ actualPayoneerRate })} />
           </label>
           <label className="field">
-            ARS que recibiste por el cambio
-            <NumberField value={actuals.arsReceived} disabled={busy} ariaLabel="ARS realmente recibidos" onCommit={(arsReceived) => patch({ arsReceived })} />
+            USD que terminaste cambiando
+            <NumberField value={actuals.usdExchanged} disabled={busy} ariaLabel="USD realmente cambiados" onCommit={(usdExchanged) => patch({ usdExchanged })} />
           </label>
           <label className="field">
             Total pagado en tarjetas en ARS
             <NumberField value={actuals.cardPaymentsArs} disabled={busy} ariaLabel="Pago real de tarjetas en ARS" onCommit={(cardPaymentsArs) => patch({ cardPaymentsArs })} />
           </label>
-          <label className="field">
-            Total pagado en tarjetas en USD
-            <NumberField value={actuals.cardPaymentsUsd} disabled={busy} ariaLabel="Pago real de tarjetas en USD" onCommit={(cardPaymentsUsd) => patch({ cardPaymentsUsd })} />
-          </label>
+          <div className="actuals-derived">
+            <span>ARS recibidos automáticamente</span>
+            <strong>{effectiveRate > 0 ? ars(actuals.arsReceived) : '—'}</strong>
+            <small>USD cambiados × dólar Payoneer real</small>
+          </div>
+          <div className="actuals-derived">
+            <span>Tarjetas equivalentes en USD</span>
+            <strong>{effectiveRate > 0 ? usdPrecise(actuals.cardPaymentsUsd) : '—'}</strong>
+            <small>Pago de tarjetas en ARS ÷ dólar Payoneer real</small>
+          </div>
         </div>
         <label className="field actuals-notes">
           Qué ocurrió este mes
@@ -163,8 +169,7 @@ export function MonthlyCloseView({ periodId }: { periodId: number }) {
             <tbody>
               <tr><td>USD cambiados</td><td className="num">{usdPrecise(plannedUsdExchange)}</td><td className="num">{usdPrecise(actuals.usdExchanged)}</td><td className="num">{signedUsd(exchangeDeviationUsd)}</td></tr>
               <tr><td>ARS recibidos</td><td className="num">{ars(plannedArsMissing)}</td><td className="num">{ars(actuals.arsReceived)}</td><td className="num">{signedArs(exchangeDeviationArs)}</td></tr>
-              <tr><td>Tarjetas pagadas en ARS</td><td className="num">{ars(plannedCardsArs)}</td><td className="num">{ars(actuals.cardPaymentsArs)}</td><td className="num">{signedArs(cardsDeviationArs)}</td></tr>
-              <tr><td>Tarjetas pagadas en USD</td><td className="num">{usdPrecise(plannedCardsUsd)}</td><td className="num">{usdPrecise(actuals.cardPaymentsUsd)}</td><td className="num">{signedUsd(cardsDeviationUsd)}</td></tr>
+              <tr><td>Tarjetas equivalentes en USD</td><td className="num">{usdPrecise(plannedCardsEquivalentUsd)}</td><td className="num">{hasActuals ? usdPrecise(actuals.cardPaymentsUsd) : '—'}</td><td className="num">{hasActuals ? signedUsd(cardsDeviationEquivalentUsd) : '—'}</td></tr>
             </tbody>
           </table>
         </div>
