@@ -424,10 +424,12 @@ h3 {
 }
 
 .tile-value {
-  font-size: 26px;
+  font-size: clamp(19px, 2vw, 26px);
   font-weight: 600;
+  line-height: 1.15;
   margin-top: 4px;
   letter-spacing: -0.02em;
+  overflow-wrap: anywhere;
 }
 
 .tile-value.hero {
