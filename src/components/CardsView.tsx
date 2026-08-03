@@ -1,6 +1,6 @@
 import { api } from '../api/client'
 import type { CardLine, CardStatus, Currency, SaveCreditCardRequest } from '../api/types'
-import { CARD_STATUS_LABELS, money, monthsLabel, usdPrecise } from '../lib/format'
+import { CARD_STATUS_LABELS, ars, money, monthsLabel, usdPrecise } from '../lib/format'
 import { useScreen } from '../lib/useScreen'
 import { NumberField, Panel, ScreenState, SelectField, TextField, Tile } from './ui'
 
@@ -44,6 +44,28 @@ export function CardsView({ periodId }: { periodId: number }) {
       {error && <div className="error-banner">{error}</div>}
 
       <div className="tile-grid">
+        <Tile
+          label="Límite mensual de tarjetas"
+          value={usdPrecise(cards.monthlyLimitUsd)}
+          hint={ars(cards.monthlyLimitArs)}
+        />
+        <Tile
+          label="Consumido con mis tarjetas"
+          value={usdPrecise(cards.creditExpensesUsd)}
+          hint={ars(cards.creditExpensesArs)}
+          tone={cards.creditExpensesUsd > cards.monthlyLimitUsd ? 'bad' : undefined}
+        />
+        <Tile
+          label="Crédito externo"
+          value={usdPrecise(cards.externalCreditExpensesUsd)}
+          hint={ars(cards.externalCreditExpensesArs)}
+        />
+        <Tile
+          label="Disponible para tarjetas"
+          value={usdPrecise(cards.availableLimitUsd)}
+          hint={ars(cards.availableLimitArs)}
+          tone={cards.availableLimitUsd >= 0 ? 'good' : 'bad'}
+        />
         <Tile label="Deuda total" value={usdPrecise(cards.totalBalanceUsd)} tone={cards.totalBalanceUsd > 0 ? 'bad' : 'good'} />
         <Tile
           label="Pago mensual comprometido"
@@ -57,6 +79,24 @@ export function CardsView({ periodId }: { periodId: number }) {
           hint="Estimado sin intereses; sirve para priorizar, no como cronograma"
         />
       </div>
+
+      <Panel
+        title="Límite mensual de tarjetas"
+        note="Este límite corresponde únicamente al mes seleccionado. El consumo se calcula con los gastos marcados como crédito."
+      >
+        <div className="field-grid">
+          <label className="field">
+            Límite total en USD
+            <NumberField
+              value={cards.monthlyLimitUsd}
+              disabled={busy}
+              ariaLabel="Límite mensual de tarjetas en USD"
+              onCommit={(monthlyLimitUsd) => run(() => api.updateCardLimit(periodId, monthlyLimitUsd))}
+            />
+            <span className="field-hint">Equivale a {ars(cards.monthlyLimitArs)} al dólar de referencia del mes.</span>
+          </label>
+        </div>
+      </Panel>
 
       {priority && (
         <Panel title="Prioridad de pago">

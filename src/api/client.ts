@@ -152,6 +152,11 @@ export const api = {
 
   // Tarjetas
   cards: (periodId: number) => request<CardsSummary>(`/periods/${periodId}/cards`),
+  updateCardLimit: (periodId: number, monthlyLimitUsd: number) =>
+    request<CardsSummary>(`/periods/${periodId}/cards/limit`, {
+      method: 'PUT',
+      body: JSON.stringify({ monthlyLimitUsd }),
+    }),
   addCard: (periodId: number, body: SaveCreditCardRequest) =>
     request<CardsSummary>(`/periods/${periodId}/cards`, { method: 'POST', body: JSON.stringify(body) }),
   updateCard: (periodId: number, cardId: number, body: SaveCreditCardRequest) =>
