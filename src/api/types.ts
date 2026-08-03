@@ -40,6 +40,7 @@ export interface IncomeSummary {
 }
 
 export interface MonthlyActuals {
+  actualPayoneerRate: number
   usdExchanged: number
   arsReceived: number
   cardPaymentsArs: number
@@ -47,7 +48,12 @@ export interface MonthlyActuals {
   notes: string | null
 }
 
-export type UpdateMonthlyActualsRequest = MonthlyActuals
+export interface UpdateMonthlyActualsRequest {
+  actualPayoneerRate: number
+  usdExchanged: number
+  cardPaymentsArs: number
+  notes: string | null
+}
 
 export interface ExpenseLine {
   id: number
