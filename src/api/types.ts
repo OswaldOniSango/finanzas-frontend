@@ -62,6 +62,7 @@ export interface ExpenseLine {
   amount: number
   currency: Currency
   paymentMethod: PaymentMethod
+  countsTowardCardLimit: boolean
   expenseType: ExpenseType
   expenseGroup: string
   note: string | null
@@ -94,6 +95,16 @@ export interface ExpenseSummary {
   differenceVsBudgetArs: number | null
   differenceVsBudgetUsd: number | null
   withinBudget: boolean
+  cardMonthlyLimitArs: number
+  cardMonthlyLimitUsd: number
+  creditExpensesArs: number
+  creditExpensesUsd: number
+  ownCardExpensesArs: number
+  ownCardExpensesUsd: number
+  externalCreditExpensesArs: number
+  externalCreditExpensesUsd: number
+  availableCardLimitArs: number
+  availableCardLimitUsd: number
 }
 
 export interface PlanLine {
@@ -153,6 +164,14 @@ export interface CardsSummary {
   totalMonthlyPaymentArs: number
   totalBalanceAfterPaymentUsd: number
   estimatedPayoffMonths: number | null
+  monthlyLimitUsd: number
+  monthlyLimitArs: number
+  creditExpensesUsd: number
+  creditExpensesArs: number
+  externalCreditExpensesUsd: number
+  externalCreditExpensesArs: number
+  availableLimitUsd: number
+  availableLimitArs: number
 }
 
 export interface ProjectionPoint {
@@ -221,6 +240,7 @@ export interface SaveExpenseItemRequest {
   amount: number
   currency: Currency
   paymentMethod: PaymentMethod
+  countsTowardCardLimit: boolean
   expenseType: ExpenseType
   expenseGroup: string
   note?: string | null
