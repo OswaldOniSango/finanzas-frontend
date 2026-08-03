@@ -25,18 +25,19 @@ export function PlanView({ periodId }: { periodId: number }) {
 
   const patch = (line: PlanLine, stage: PlanStage, changes: Partial<SavePlanAllocationRequest>) =>
     run(() => api.updateAllocation(periodId, line.id, { ...toRequest(line, stage), ...changes }))
+  const apartmentStage = plan.stages.filter((stage) => stage.stage === 'AHORRO_APARTAMENTO')
 
   return (
     <div className="section">
       {error && <div className="error-banner">{error}</div>}
 
       <p className="panel-note">
-        Cada etapa reparte la base conservadora de {usdPrecise(plan.conservativeBaseUsd)}. Los porcentajes de una etapa
-        deberían sumar 100%. Marcá una línea como <strong>Presupuesto de gastos</strong> para comparar contra el gasto real, y otra
-        como <strong>Ahorro del apartamento</strong> para alimentar la proyección.
+        Organizá cómo querés distribuir la base conservadora de {usdPrecise(plan.conservativeBaseUsd)} para ahorrar para el
+        apartamento. Los porcentajes deberían sumar 100%. Marcá la línea correspondiente como{' '}
+        <strong>Ahorro del apartamento</strong> para alimentar la proyección.
       </p>
 
-      {plan.stages.map((stage) => (
+      {apartmentStage.map((stage) => (
         <Panel
           key={stage.stage}
           title={stage.label}
