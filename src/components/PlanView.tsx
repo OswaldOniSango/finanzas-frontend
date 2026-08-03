@@ -40,7 +40,7 @@ export function PlanView({ periodId }: { periodId: number }) {
       {apartmentStage.map((stage) => (
         <Panel
           key={stage.stage}
-          title={stage.label}
+          title={stage.label.replace(/^Etapa\s+\d+\s*:/i, 'Etapa:')}
           actions={
             <div className="button-row" style={{ margin: 0 }}>
               <span className={stage.balanced ? 'badge good' : 'badge bad'}>

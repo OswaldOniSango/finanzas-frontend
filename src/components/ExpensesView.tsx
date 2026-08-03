@@ -15,6 +15,13 @@ const PAYMENT_METHODS: { value: PaymentMethod; label: string }[] = [
   { value: 'CREDIT', label: 'Crédito' },
 ]
 
+type CardLimitScope = 'OWN' | 'EXTERNAL'
+
+const CARD_LIMIT_SCOPES: { value: CardLimitScope; label: string }[] = [
+  { value: 'OWN', label: 'Sí, mi tarjeta' },
+  { value: 'EXTERNAL', label: 'No, crédito externo' },
+]
+
 const TYPES = (Object.keys(EXPENSE_TYPE_LABELS) as ExpenseType[]).map((value) => ({
   value,
   label: EXPENSE_TYPE_LABELS[value],
@@ -26,6 +33,7 @@ const toRequest = (line: ExpenseLine): SaveExpenseItemRequest => ({
   amount: line.amount,
   currency: line.currency,
   paymentMethod: line.paymentMethod,
+  countsTowardCardLimit: line.countsTowardCardLimit,
   expenseType: line.expenseType,
   expenseGroup: line.expenseGroup,
   note: line.note,
@@ -98,6 +106,7 @@ export function ExpensesView({ periodId }: { periodId: number }) {
                   amount: 0,
                   currency: 'ARS',
                   paymentMethod: 'DEBIT',
+                  countsTowardCardLimit: true,
                   expenseType: 'VARIABLE',
                   expenseGroup: groupNames[0] ?? 'Otros',
                   note: null,
@@ -118,8 +127,29 @@ export function ExpensesView({ periodId }: { periodId: number }) {
           />
           <Tile
             label="Total pagado con crédito"
-            value={ars(totalsByPaymentMethod.CREDIT.ars)}
-            hint={`Equivalente a ${usdPrecise(totalsByPaymentMethod.CREDIT.usd)}`}
+            value={ars(expenses.creditExpensesArs)}
+            hint={`Equivalente a ${usdPrecise(expenses.creditExpensesUsd)}`}
+          />
+          <Tile
+            label="Consumos con mis tarjetas"
+            value={ars(expenses.ownCardExpensesArs)}
+            hint={`Equivalente a ${usdPrecise(expenses.ownCardExpensesUsd)}`}
+          />
+          <Tile
+            label="Crédito externo"
+            value={ars(expenses.externalCreditExpensesArs)}
+            hint={`Equivalente a ${usdPrecise(expenses.externalCreditExpensesUsd)}`}
+          />
+          <Tile
+            label="Límite mensual de tarjetas"
+            value={ars(expenses.cardMonthlyLimitArs)}
+            hint={usdPrecise(expenses.cardMonthlyLimitUsd)}
+          />
+          <Tile
+            label="Disponible para gastar con crédito"
+            value={ars(expenses.availableCardLimitArs)}
+            hint={usdPrecise(expenses.availableCardLimitUsd)}
+            tone={expenses.availableCardLimitUsd >= 0 ? 'good' : 'bad'}
           />
         </div>
 
@@ -132,6 +162,7 @@ export function ExpensesView({ periodId }: { periodId: number }) {
                 <th className="num">Monto</th>
                 <th>Moneda</th>
                 <th>Medio de pago</th>
+                <th>Cuenta para mi límite</th>
                 <th>Tipo</th>
                 <th>Grupo</th>
                 <th className="num">ARS</th>
@@ -165,6 +196,19 @@ export function ExpensesView({ periodId }: { periodId: number }) {
                     />
                   </td>
                   <td>
+                    {line.paymentMethod === 'CREDIT' ? (
+                      <SelectField
+                        value={line.countsTowardCardLimit ? 'OWN' : 'EXTERNAL'}
+                        options={CARD_LIMIT_SCOPES}
+                        disabled={busy}
+                        ariaLabel="Cuenta para mi límite de tarjetas"
+                        onCommit={(scope) => patch(line, { countsTowardCardLimit: scope === 'OWN' })}
+                      />
+                    ) : (
+                      '—'
+                    )}
+                  </td>
+                  <td>
                     <SelectField value={line.expenseType} options={TYPES} disabled={busy} ariaLabel="Tipo" onCommit={(expenseType) => patch(line, { expenseType })} />
                   </td>
                   <td>
@@ -188,7 +232,7 @@ export function ExpensesView({ periodId }: { periodId: number }) {
               ))}
               {expenses.lines.length === 0 && (
                 <tr>
-                  <td colSpan={11} className="empty">
+                  <td colSpan={12} className="empty">
                     Todavía no cargaste gastos en este mes.
                   </td>
                 </tr>
@@ -196,7 +240,7 @@ export function ExpensesView({ periodId }: { periodId: number }) {
             </tbody>
             <tfoot>
               <tr>
-                <td colSpan={7}>Total</td>
+                <td colSpan={8}>Total</td>
                 <td className="num">{ars(expenses.totalArs)}</td>
                 <td className="num">{usdPrecise(expenses.totalUsd)}</td>
                 <td className="num">100%</td>
