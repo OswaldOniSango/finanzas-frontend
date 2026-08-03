@@ -46,27 +46,32 @@ export function CardsView({ periodId }: { periodId: number }) {
       <div className="tile-grid">
         <Tile
           label="Límite mensual de tarjetas"
-          value={usdPrecise(cards.monthlyLimitUsd)}
-          hint={ars(cards.monthlyLimitArs)}
+          value={ars(cards.monthlyLimitArs)}
+          hint={usdPrecise(cards.monthlyLimitUsd)}
         />
         <Tile
           label="Consumido con mis tarjetas"
-          value={usdPrecise(cards.creditExpensesUsd)}
-          hint={ars(cards.creditExpensesArs)}
+          value={ars(cards.creditExpensesArs)}
+          hint={usdPrecise(cards.creditExpensesUsd)}
           tone={cards.creditExpensesUsd > cards.monthlyLimitUsd ? 'bad' : undefined}
         />
         <Tile
           label="Crédito externo"
-          value={usdPrecise(cards.externalCreditExpensesUsd)}
-          hint={ars(cards.externalCreditExpensesArs)}
+          value={ars(cards.externalCreditExpensesArs)}
+          hint={usdPrecise(cards.externalCreditExpensesUsd)}
         />
         <Tile
           label="Disponible para tarjetas"
-          value={usdPrecise(cards.availableLimitUsd)}
-          hint={ars(cards.availableLimitArs)}
+          value={ars(cards.availableLimitArs)}
+          hint={usdPrecise(cards.availableLimitUsd)}
           tone={cards.availableLimitUsd >= 0 ? 'good' : 'bad'}
         />
-        <Tile label="Deuda total" value={usdPrecise(cards.totalBalanceUsd)} tone={cards.totalBalanceUsd > 0 ? 'bad' : 'good'} />
+        <Tile
+          label="Deuda total"
+          value={usdPrecise(cards.totalBalanceUsd)}
+          hint={ars(cards.totalBalanceArs)}
+          tone={cards.totalBalanceUsd > 0 ? 'bad' : 'good'}
+        />
         <Tile
           label="Pago mensual comprometido"
           value={usdPrecise(cards.totalMonthlyPaymentUsd)}
@@ -93,7 +98,21 @@ export function CardsView({ periodId }: { periodId: number }) {
               ariaLabel="Límite mensual de tarjetas en USD"
               onCommit={(monthlyLimitUsd) => run(() => api.updateCardLimit(periodId, monthlyLimitUsd))}
             />
-            <span className="field-hint">Equivale a {ars(cards.monthlyLimitArs)} al dólar de referencia del mes.</span>
+            <span className="field-hint">Se convierte automáticamente a pesos.</span>
+          </label>
+          <label className="field">
+            Límite total en ARS
+            <NumberField
+              value={cards.monthlyLimitArs}
+              disabled={busy || cards.referenceRate <= 0}
+              ariaLabel="Límite mensual de tarjetas en ARS"
+              onCommit={(monthlyLimitArs) =>
+                run(() => api.updateCardLimit(periodId, monthlyLimitArs / cards.referenceRate))
+              }
+            />
+            <span className="field-hint">
+              Se convierte automáticamente usando el dólar de referencia de {ars(cards.referenceRate)}.
+            </span>
           </label>
         </div>
       </Panel>

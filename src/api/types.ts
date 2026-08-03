@@ -172,6 +172,7 @@ export interface CardsSummary {
   externalCreditExpensesArs: number
   availableLimitUsd: number
   availableLimitArs: number
+  referenceRate: number
 }
 
 export interface ProjectionPoint {
