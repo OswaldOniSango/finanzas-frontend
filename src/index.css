@@ -301,6 +301,32 @@ h3 {
   grid-template-columns: repeat(2, minmax(240px, 1fr));
 }
 
+.actuals-form-grid {
+  display: grid;
+  gap: 16px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.actuals-notes {
+  margin-top: 18px;
+}
+
+.actuals-notes textarea {
+  min-height: 90px;
+}
+
+.actuals-adjustment {
+  font-size: 16px;
+  line-height: 1.65;
+  margin: 0;
+}
+
+@media (max-width: 680px) {
+  .actuals-form-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
 .card-dollar-field {
   background: var(--surface-sunken);
   border-radius: var(--radius-sm);

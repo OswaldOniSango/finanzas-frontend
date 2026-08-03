@@ -39,6 +39,16 @@ export interface IncomeSummary {
   conservativeBaseArs: number
 }
 
+export interface MonthlyActuals {
+  usdExchanged: number
+  arsReceived: number
+  cardPaymentsArs: number
+  cardPaymentsUsd: number
+  notes: string | null
+}
+
+export type UpdateMonthlyActualsRequest = MonthlyActuals
+
 export interface ExpenseLine {
   id: number
   category: string

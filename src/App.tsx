@@ -8,6 +8,7 @@ import { ExpensesView } from './components/ExpensesView'
 import { HistoryView } from './components/HistoryView'
 import { IncomeView } from './components/IncomeView'
 import { LoginView } from './components/LoginView'
+import { MonthlyCloseView } from './components/MonthlyCloseView'
 import { PlanView } from './components/PlanView'
 import { SummaryView } from './components/SummaryView'
 import { UsersView } from './components/UsersView'
@@ -17,6 +18,7 @@ const TABS = [
   { id: 'ingresos', label: 'Ingresos' },
   { id: 'gastos', label: 'Gastos mensuales' },
   { id: 'flujo', label: 'Flujo por moneda' },
+  { id: 'cierre', label: 'Cierre mensual' },
   { id: 'plan', label: 'Plan mensual' },
   { id: 'tarjetas', label: 'Tarjetas' },
   { id: 'apartamento', label: 'Apartamento' },
@@ -202,6 +204,7 @@ function FinancialApp({ role, onLogout }: { role: UserRole | null; onLogout: () 
         {tab === 'ingresos' && <IncomeView periodId={periodId} />}
         {tab === 'gastos' && <ExpensesView periodId={periodId} />}
         {tab === 'flujo' && <CashFlowView periodId={periodId} />}
+        {tab === 'cierre' && <MonthlyCloseView periodId={periodId} />}
         {tab === 'plan' && <PlanView periodId={periodId} />}
         {tab === 'tarjetas' && <CardsView periodId={periodId} />}
         {tab === 'apartamento' && <ApartmentView periodId={periodId} />}
