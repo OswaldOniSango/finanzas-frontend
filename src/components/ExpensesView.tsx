@@ -60,16 +60,6 @@ export function ExpensesView({ periodId }: { periodId: number }) {
       <div className="tile-grid">
         <Tile label="Total de gastos" value={usdPrecise(expenses.totalUsd)} hint={ars(expenses.totalArs)} />
         <Tile
-          label="Pagado con débito"
-          value={usdPrecise(totalsByPaymentMethod.DEBIT.usd)}
-          hint={ars(totalsByPaymentMethod.DEBIT.ars)}
-        />
-        <Tile
-          label="Pagado con crédito"
-          value={usdPrecise(totalsByPaymentMethod.CREDIT.usd)}
-          hint={ars(totalsByPaymentMethod.CREDIT.ars)}
-        />
-        <Tile
           label="Disponible después de gastos"
           value={usdPrecise(expenses.availableAfterExpensesUsd)}
           hint={ars(expenses.availableAfterExpensesArs)}
@@ -119,6 +109,20 @@ export function ExpensesView({ periodId }: { periodId: number }) {
           </button>
         }
       >
+        <h3>Totales según la lista</h3>
+        <div className="tile-grid">
+          <Tile
+            label="Total pagado con débito"
+            value={ars(totalsByPaymentMethod.DEBIT.ars)}
+            hint={`Equivalente a ${usdPrecise(totalsByPaymentMethod.DEBIT.usd)}`}
+          />
+          <Tile
+            label="Total pagado con crédito"
+            value={ars(totalsByPaymentMethod.CREDIT.ars)}
+            hint={`Equivalente a ${usdPrecise(totalsByPaymentMethod.CREDIT.usd)}`}
+          />
+        </div>
+
         <div className="table-wrap">
           <table>
             <thead>
