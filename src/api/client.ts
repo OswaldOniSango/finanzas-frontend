@@ -22,6 +22,7 @@ const API_ORIGIN = (import.meta.env.VITE_API_URL as string | undefined)?.replace
 const BASE = `${API_ORIGIN}/api`
 const TOKEN_KEY = 'finanzas.jwt'
 const ROLE_KEY = 'finanzas.role'
+const USERNAME_KEY = 'finanzas.username'
 const UNAUTHORIZED_EVENT = 'finanzas:unauthorized'
 
 type LoginResult = { accessToken: string; expiresIn: number; username: string; role: UserRole }
@@ -29,7 +30,25 @@ type LoginResult = { accessToken: string; expiresIn: number; username: string; r
 function saveSession(response: LoginResult) {
   sessionStorage.setItem(TOKEN_KEY, response.accessToken)
   sessionStorage.setItem(ROLE_KEY, response.role)
+  sessionStorage.setItem(USERNAME_KEY, response.username)
   return response
+}
+
+function usernameFromToken() {
+  try {
+    const token = sessionStorage.getItem(TOKEN_KEY)
+    if (!token) return null
+    const payload = token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/')
+    return JSON.parse(atob(payload))?.sub as string | null
+  } catch {
+    return null
+  }
+}
+
+function clearSession() {
+  sessionStorage.removeItem(TOKEN_KEY)
+  sessionStorage.removeItem(ROLE_KEY)
+  sessionStorage.removeItem(USERNAME_KEY)
 }
 
 export class ApiError extends Error {
@@ -51,7 +70,7 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
 
   if (!response.ok) {
     if (response.status === 401 && path !== '/auth/login') {
-      sessionStorage.removeItem(TOKEN_KEY)
+      clearSession()
       window.dispatchEvent(new Event(UNAUTHORIZED_EVENT))
     }
     const body = await response.json().catch(() => null)
@@ -76,6 +95,7 @@ export const api = {
   // Autenticación
   hasSession: () => Boolean(sessionStorage.getItem(TOKEN_KEY) && sessionStorage.getItem(ROLE_KEY)),
   getRole: () => sessionStorage.getItem(ROLE_KEY) as UserRole | null,
+  getUsername: () => sessionStorage.getItem(USERNAME_KEY) ?? usernameFromToken(),
   onUnauthorized: (listener: () => void) => {
     window.addEventListener(UNAUTHORIZED_EVENT, listener)
     return () => window.removeEventListener(UNAUTHORIZED_EVENT, listener)
@@ -89,8 +109,7 @@ export const api = {
   },
   demoLogin: async () => saveSession(await request<LoginResult>('/auth/demo', { method: 'POST' })),
   logout: () => {
-    sessionStorage.removeItem(TOKEN_KEY)
-    sessionStorage.removeItem(ROLE_KEY)
+    clearSession()
   },
 
   // Usuarios (sólo administradores)

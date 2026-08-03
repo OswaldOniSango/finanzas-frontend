@@ -63,12 +63,22 @@ export default function App() {
 
 function FinancialApp({ role, onLogout }: { role: UserRole | null; onLogout: () => void }) {
   const demoMode = role === 'DEMO'
+  const username = api.getUsername() ?? 'Mi cuenta'
   const [periods, setPeriods] = useState<PeriodRef[]>([])
   const [periodId, setPeriodId] = useState<number | null>(null)
   const [tab, setTab] = useState<TabId>('resumen')
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+  const [accountMenuOpen, setAccountMenuOpen] = useState(false)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [periodsLoaded, setPeriodsLoaded] = useState(false)
+  const visibleTabs = TABS.filter((item) => item.id !== 'usuarios' || role === 'ADMIN')
+  const activeTabLabel = visibleTabs.find((item) => item.id === tab)?.label ?? 'Menú'
+
+  const selectTab = (nextTab: TabId) => {
+    setTab(nextTab)
+    setMobileMenuOpen(false)
+  }
 
   useEffect(() => {
     let cancelled = false
@@ -149,7 +159,7 @@ function FinancialApp({ role, onLogout }: { role: UserRole | null; onLogout: () 
   return (
     <div className="app">
       <header className="app-header">
-        <div>
+        <div className="app-brand">
           <h1 className="app-title">Plan financiero</h1>
           <div className="app-subtitle">Ingresos, gastos, tarjetas y la meta del apartamento</div>
         </div>
@@ -167,14 +177,47 @@ function FinancialApp({ role, onLogout }: { role: UserRole | null; onLogout: () 
               </option>
             ))}
           </select>
-          {!demoMode && (
-            <button disabled={busy} onClick={() => void createNextPeriod()}>
-              Nuevo mes
-            </button>
-          )}
-          <button className="ghost" onClick={onLogout}>
-            Salir
+        </div>
+
+        <div className="account-menu-wrapper">
+          <button
+            className="account-menu-toggle"
+            aria-label="Abrir menú de cuenta"
+            aria-expanded={accountMenuOpen}
+            onClick={() => setAccountMenuOpen((open) => !open)}
+          >
+            {username.charAt(0).toUpperCase()}
           </button>
+          {accountMenuOpen && (
+            <div className="account-menu" role="menu">
+              <div className="account-summary">
+                <div className="account-avatar">{username.charAt(0).toUpperCase()}</div>
+                <div className="account-identity">
+                  <strong>{username}</strong>
+                  <span>{role === 'ADMIN' ? 'Administrador' : role === 'DEMO' ? 'Demostración' : 'Usuario'}</span>
+                </div>
+              </div>
+              <div className="account-menu-divider" />
+              {!demoMode && (
+                <button
+                  className="account-menu-action"
+                  role="menuitem"
+                  disabled={busy}
+                  onClick={() => {
+                    setAccountMenuOpen(false)
+                    void createNextPeriod()
+                  }}
+                >
+                  <span aria-hidden>＋</span>
+                  Nuevo mes
+                </button>
+              )}
+              <button className="account-menu-action" role="menuitem" onClick={onLogout}>
+                <span aria-hidden>↪</span>
+                Cerrar sesión
+              </button>
+            </div>
+          )}
         </div>
       </header>
 
@@ -186,18 +229,44 @@ function FinancialApp({ role, onLogout }: { role: UserRole | null; onLogout: () 
       )}
 
       <nav className="tabs" role="tablist">
-        {TABS.filter((item) => item.id !== 'usuarios' || role === 'ADMIN').map((item) => (
+        {visibleTabs.map((item) => (
           <button
             key={item.id}
             className="tab"
             role="tab"
             aria-selected={tab === item.id}
-            onClick={() => setTab(item.id)}
+            onClick={() => selectTab(item.id)}
           >
             {item.label}
           </button>
         ))}
       </nav>
+
+      <div className="mobile-navigation">
+        <button
+          className="mobile-menu-toggle"
+          aria-expanded={mobileMenuOpen}
+          aria-controls="mobile-menu"
+          onClick={() => setMobileMenuOpen((open) => !open)}
+        >
+          <span className="hamburger-icon" aria-hidden>☰</span>
+          <span>{activeTabLabel}</span>
+        </button>
+        {mobileMenuOpen && (
+          <nav id="mobile-menu" className="mobile-menu" aria-label="Navegación principal">
+            {visibleTabs.map((item) => (
+              <button
+                key={item.id}
+                className={tab === item.id ? 'mobile-menu-item active' : 'mobile-menu-item'}
+                aria-current={tab === item.id ? 'page' : undefined}
+                onClick={() => selectTab(item.id)}
+              >
+                {item.label}
+              </button>
+            ))}
+          </nav>
+        )}
+      </div>
 
       <fieldset className="demo-content" disabled={demoMode}>
         {tab === 'resumen' && <SummaryView periodId={periodId} />}

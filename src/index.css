@@ -185,10 +185,9 @@ h3 {
 }
 
 .app-header {
-  display: flex;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
   align-items: flex-end;
-  justify-content: space-between;
   gap: 16px;
   margin-bottom: 20px;
 }
@@ -207,6 +206,88 @@ h3 {
   display: flex;
   align-items: center;
   gap: 8px;
+}
+
+.account-menu-wrapper {
+  align-self: center;
+  position: relative;
+}
+
+.account-menu-toggle,
+.account-avatar {
+  align-items: center;
+  background: color-mix(in srgb, var(--series-1) 24%, var(--surface));
+  border: 1px solid color-mix(in srgb, var(--series-1) 45%, var(--border));
+  border-radius: 50%;
+  color: var(--text-primary);
+  display: flex;
+  font-weight: 700;
+  justify-content: center;
+}
+
+.account-menu-toggle {
+  height: 38px;
+  padding: 0;
+  width: 38px;
+}
+
+.account-menu {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: 0 14px 36px rgba(0, 0, 0, 0.24);
+  min-width: 280px;
+  padding: 12px;
+  position: absolute;
+  right: 0;
+  top: calc(100% + 8px);
+  z-index: 30;
+}
+
+.account-summary {
+  align-items: center;
+  display: flex;
+  gap: 10px;
+}
+
+.account-avatar {
+  flex: 0 0 auto;
+  height: 34px;
+  width: 34px;
+}
+
+.account-identity {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+}
+
+.account-identity strong {
+  font-size: 14px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.account-identity span {
+  color: var(--text-muted);
+  font-size: 12px;
+}
+
+.account-menu-divider {
+  border-top: 1px solid var(--border);
+  margin: 12px 0 6px;
+}
+
+.account-menu-action {
+  align-items: center;
+  background: transparent;
+  border-color: transparent;
+  color: var(--text-secondary);
+  display: flex;
+  gap: 9px;
+  justify-content: flex-start;
+  width: 100%;
 }
 
 .tabs {
@@ -255,6 +336,10 @@ h3 {
   border-bottom-color: var(--series-1);
   color: var(--text-primary);
   font-weight: 600;
+}
+
+.mobile-navigation {
+  display: none;
 }
 
 .section {
@@ -341,6 +426,85 @@ h3 {
 }
 
 @media (max-width: 680px) {
+  .app-header {
+    align-items: center;
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+
+  .header-controls {
+    grid-column: 1 / -1;
+    grid-row: 2;
+  }
+
+  .header-controls select {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .account-menu-wrapper {
+    grid-column: 2;
+    grid-row: 1;
+  }
+
+  .account-menu {
+    max-width: calc(100vw - 32px);
+  }
+
+  .tabs {
+    display: none;
+  }
+
+  .mobile-navigation {
+    display: block;
+    margin-bottom: 20px;
+    position: relative;
+  }
+
+  .mobile-menu-toggle {
+    align-items: center;
+    display: flex;
+    font-size: 15px;
+    font-weight: 600;
+    gap: 10px;
+    justify-content: flex-start;
+    width: 100%;
+  }
+
+  .hamburger-icon {
+    font-size: 21px;
+    line-height: 1;
+  }
+
+  .mobile-menu {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.18);
+    display: grid;
+    gap: 2px;
+    left: 0;
+    margin-top: 6px;
+    padding: 6px;
+    position: absolute;
+    right: 0;
+    z-index: 20;
+  }
+
+  .mobile-menu-item {
+    background: transparent;
+    border-color: transparent;
+    color: var(--text-secondary);
+    justify-content: flex-start;
+    text-align: left;
+    width: 100%;
+  }
+
+  .mobile-menu-item.active {
+    background: var(--series-1-wash);
+    color: var(--text-primary);
+    font-weight: 600;
+  }
+
   .actuals-form-grid {
     grid-template-columns: 1fr;
   }
