@@ -4,6 +4,7 @@ import type {
   ExpenseSummary,
   HistoryPoint,
   IncomeSummary,
+  MonthlyActuals,
   PeriodOverview,
   PeriodRef,
   PlanSummary,
@@ -12,6 +13,7 @@ import type {
   SavePlanAllocationRequest,
   UpdateApartmentGoalRequest,
   UpdateIncomeRequest,
+  UpdateMonthlyActualsRequest,
   AppUser,
   UserRole,
 } from './types'
@@ -118,6 +120,11 @@ export const api = {
   income: (periodId: number) => request<IncomeSummary>(`/periods/${periodId}/income`),
   updateIncome: (periodId: number, body: UpdateIncomeRequest) =>
     request<IncomeSummary>(`/periods/${periodId}/income`, { method: 'PUT', body: JSON.stringify(body) }),
+
+  // Cierre mensual
+  monthlyActuals: (periodId: number) => request<MonthlyActuals>(`/periods/${periodId}/actuals`),
+  updateMonthlyActuals: (periodId: number, body: UpdateMonthlyActualsRequest) =>
+    request<MonthlyActuals>(`/periods/${periodId}/actuals`, { method: 'PUT', body: JSON.stringify(body) }),
 
   // Gastos
   expenses: (periodId: number) => request<ExpenseSummary>(`/periods/${periodId}/expenses`),
