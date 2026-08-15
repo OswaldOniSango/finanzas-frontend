@@ -1,9 +1,10 @@
+import { useState } from 'react'
 import { api } from '../api/client'
 import type { Currency, ExpenseLine, ExpenseType, PaymentMethod, SaveExpenseItemRequest } from '../api/types'
 import { EXPENSE_TYPE_LABELS, ars, percent, usdPrecise } from '../lib/format'
 import { useScreen } from '../lib/useScreen'
 import { ExpenseGroupsChart } from './charts/ExpenseGroupsChart'
-import { NumberField, Panel, ScreenState, SelectField, TextField, Tile } from './ui'
+import { Panel, ScreenState, Tile } from './ui'
 
 const CURRENCIES: { value: Currency; label: string }[] = [
   { value: 'ARS', label: 'ARS' },
@@ -40,8 +41,23 @@ const toRequest = (line: ExpenseLine): SaveExpenseItemRequest => ({
   sortOrder: line.sortOrder,
 })
 
+const emptyExpense = (expenseGroup = 'Otros'): SaveExpenseItemRequest => ({
+  category: '',
+  detail: null,
+  amount: 0,
+  currency: 'ARS',
+  paymentMethod: 'DEBIT',
+  countsTowardCardLimit: true,
+  expenseType: 'VARIABLE',
+  expenseGroup,
+  note: null,
+})
+
 export function ExpensesView({ periodId }: { periodId: number }) {
   const { data: expenses, error, loading, busy, run } = useScreen(periodId, api.expenses)
+  const [showAddModal, setShowAddModal] = useState(false)
+  const [draft, setDraft] = useState<SaveExpenseItemRequest>(emptyExpense)
+  const [editingExpense, setEditingExpense] = useState<ExpenseLine | null>(null)
 
   if (!expenses) return <ScreenState loading={loading} error={error} />
 
@@ -58,12 +74,118 @@ export function ExpensesView({ periodId }: { periodId: number }) {
     },
   )
 
-  const patch = (line: ExpenseLine, changes: Partial<SaveExpenseItemRequest>) =>
-    run(() => api.updateExpense(periodId, line.id, { ...toRequest(line), ...changes }))
+  const closeAddModal = () => {
+    setShowAddModal(false)
+    setEditingExpense(null)
+    setDraft(emptyExpense(groupNames[0]))
+  }
+
+  const saveExpense = () => {
+    const request = {
+      ...draft,
+      category: draft.category.trim(),
+      detail: draft.detail?.trim() || null,
+      expenseGroup: draft.expenseGroup.trim() || 'Otros',
+      note: draft.note?.trim() || null,
+    }
+    if (!request.category) return
+
+    run(() =>
+      (editingExpense
+        ? api.updateExpense(periodId, editingExpense.id, request)
+        : api.addExpense(periodId, request)
+      ).then((next) => {
+        closeAddModal()
+        return next
+      }),
+    )
+  }
 
   return (
     <div className="section">
       {error && <div className="error-banner">{error}</div>}
+
+      {showAddModal && (
+        <div
+          className="modal-backdrop"
+          role="presentation"
+          onMouseDown={(event) => {
+            if (event.target === event.currentTarget && !busy) closeAddModal()
+          }}
+        >
+          <section className="expense-modal" role="dialog" aria-modal="true" aria-labelledby="new-expense-title">
+            <div className="modal-head">
+              <div>
+                <h2 id="new-expense-title">{editingExpense ? 'Editar gasto' : 'Agregar gasto'}</h2>
+                <p>{editingExpense ? 'Actualizá los datos de este gasto.' : 'Registrá un nuevo gasto para el mes seleccionado.'}</p>
+              </div>
+              <button className="modal-close" aria-label="Cerrar" disabled={busy} onClick={closeAddModal}>×</button>
+            </div>
+
+            <div className="modal-form-grid">
+              <label className="field">
+                Categoría
+                <input autoFocus value={draft.category} placeholder="Ej.: Supermercado" onChange={(event) => setDraft((current) => ({ ...current, category: event.target.value }))} />
+              </label>
+              <label className="field">
+                Detalle
+                <input value={draft.detail ?? ''} placeholder="Opcional" onChange={(event) => setDraft((current) => ({ ...current, detail: event.target.value }))} />
+              </label>
+              <label className="field">
+                Monto
+                <input type="number" min="0" step="0.01" value={draft.amount} onChange={(event) => setDraft((current) => ({ ...current, amount: Number(event.target.value) }))} />
+              </label>
+              <label className="field">
+                Moneda
+                <select value={draft.currency} onChange={(event) => setDraft((current) => ({ ...current, currency: event.target.value as Currency }))}>
+                  {CURRENCIES.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
+                </select>
+              </label>
+              <label className="field">
+                Medio de pago
+                <select value={draft.paymentMethod} onChange={(event) => setDraft((current) => ({ ...current, paymentMethod: event.target.value as PaymentMethod }))}>
+                  {PAYMENT_METHODS.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
+                </select>
+              </label>
+              {draft.paymentMethod === 'CREDIT' && (
+                <label className="field">
+                  Cuenta para mi límite
+                  <select value={draft.countsTowardCardLimit ? 'OWN' : 'EXTERNAL'} onChange={(event) => setDraft((current) => ({ ...current, countsTowardCardLimit: event.target.value === 'OWN' }))}>
+                    {CARD_LIMIT_SCOPES.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
+                  </select>
+                </label>
+              )}
+              <label className="field">
+                Tipo
+                <select value={draft.expenseType} onChange={(event) => setDraft((current) => ({ ...current, expenseType: event.target.value as ExpenseType }))}>
+                  {TYPES.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
+                </select>
+              </label>
+              <label className="field">
+                Grupo
+                <input list="expense-group-options" value={draft.expenseGroup} onChange={(event) => setDraft((current) => ({ ...current, expenseGroup: event.target.value }))} />
+                <datalist id="expense-group-options">{groupNames.map((group) => <option key={group} value={group} />)}</datalist>
+              </label>
+            </div>
+
+            <div className="modal-actions">
+              {editingExpense && (
+                <button
+                  className="ghost danger modal-delete"
+                  disabled={busy}
+                  onClick={() => run(() => api.deleteExpense(periodId, editingExpense.id).then((next) => { closeAddModal(); return next }))}
+                >
+                  Eliminar gasto
+                </button>
+              )}
+              <button className="ghost" disabled={busy} onClick={closeAddModal}>Cancelar</button>
+              <button className="primary" disabled={busy || !draft.category.trim()} onClick={saveExpense}>
+                {editingExpense ? 'Guardar cambios' : 'Guardar gasto'}
+              </button>
+            </div>
+          </section>
+        </div>
+      )}
 
       <div className="tile-grid">
         <Tile label="Total de gastos" value={usdPrecise(expenses.totalUsd)} hint={ars(expenses.totalArs)} />
@@ -96,24 +218,7 @@ export function ExpensesView({ periodId }: { periodId: number }) {
         title="Gastos mensuales"
         note="Indicá si cada gasto se pagó con débito o crédito; la conversión se recalcula sola con el dólar de referencia."
         actions={
-          <button
-            disabled={busy}
-            onClick={() =>
-              run(() =>
-                api.addExpense(periodId, {
-                  category: 'Nuevo gasto',
-                  detail: null,
-                  amount: 0,
-                  currency: 'ARS',
-                  paymentMethod: 'DEBIT',
-                  countsTowardCardLimit: true,
-                  expenseType: 'VARIABLE',
-                  expenseGroup: groupNames[0] ?? 'Otros',
-                  note: null,
-                }),
-              )
-            }
-          >
+          <button disabled={busy} onClick={() => { setEditingExpense(null); setDraft(emptyExpense(groupNames[0])); setShowAddModal(true) }}>
             Agregar gasto
           </button>
         }
@@ -153,102 +258,51 @@ export function ExpensesView({ periodId }: { periodId: number }) {
           />
         </div>
 
-        <div className="table-wrap">
-          <table>
-            <thead>
-              <tr>
-                <th>Categoría</th>
-                <th>Detalle</th>
-                <th className="num">Monto</th>
-                <th>Moneda</th>
-                <th>Medio de pago</th>
-                <th>Cuenta para mi límite</th>
-                <th>Tipo</th>
-                <th>Grupo</th>
-                <th className="num">ARS</th>
-                <th className="num">USD</th>
-                <th className="num">% del total</th>
-                <th />
-              </tr>
-            </thead>
-            <tbody>
-              {expenses.lines.map((line) => (
-                <tr key={line.id}>
-                  <td>
-                    <TextField value={line.category} disabled={busy} ariaLabel="Categoría" onCommit={(category) => patch(line, { category })} />
-                  </td>
-                  <td>
-                    <TextField value={line.detail ?? ''} disabled={busy} ariaLabel="Detalle" onCommit={(detail) => patch(line, { detail })} />
-                  </td>
-                  <td className="num">
-                    <NumberField value={line.amount} disabled={busy} ariaLabel="Monto" onCommit={(amount) => patch(line, { amount })} />
-                  </td>
-                  <td>
-                    <SelectField value={line.currency} options={CURRENCIES} disabled={busy} ariaLabel="Moneda" onCommit={(currency) => patch(line, { currency })} />
-                  </td>
-                  <td>
-                    <SelectField
-                      value={line.paymentMethod}
-                      options={PAYMENT_METHODS}
-                      disabled={busy}
-                      ariaLabel="Medio de pago"
-                      onCommit={(paymentMethod) => patch(line, { paymentMethod })}
-                    />
-                  </td>
-                  <td>
-                    {line.paymentMethod === 'CREDIT' ? (
-                      <SelectField
-                        value={line.countsTowardCardLimit ? 'OWN' : 'EXTERNAL'}
-                        options={CARD_LIMIT_SCOPES}
-                        disabled={busy}
-                        ariaLabel="Cuenta para mi límite de tarjetas"
-                        onCommit={(scope) => patch(line, { countsTowardCardLimit: scope === 'OWN' })}
-                      />
-                    ) : (
-                      '—'
-                    )}
-                  </td>
-                  <td>
-                    <SelectField value={line.expenseType} options={TYPES} disabled={busy} ariaLabel="Tipo" onCommit={(expenseType) => patch(line, { expenseType })} />
-                  </td>
-                  <td>
-                    <TextField value={line.expenseGroup} disabled={busy} ariaLabel="Grupo" onCommit={(expenseGroup) => patch(line, { expenseGroup })} />
-                  </td>
-                  <td className="num">{ars(line.amountArs)}</td>
-                  <td className="num">{usdPrecise(line.amountUsd)}</td>
-                  <td className="num">{percent(line.shareOfTotal)}</td>
-                  <td>
-                    <div className="row-actions">
-                      <button
-                        className="ghost danger"
-                        disabled={busy}
-                        onClick={() => run(() => api.deleteExpense(periodId, line.id))}
-                      >
-                        Eliminar
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-              {expenses.lines.length === 0 && (
-                <tr>
-                  <td colSpan={12} className="empty">
-                    Todavía no cargaste gastos en este mes.
-                  </td>
-                </tr>
-              )}
-            </tbody>
-            <tfoot>
-              <tr>
-                <td colSpan={8}>Total</td>
-                <td className="num">{ars(expenses.totalArs)}</td>
-                <td className="num">{usdPrecise(expenses.totalUsd)}</td>
-                <td className="num">100%</td>
-                <td />
-              </tr>
-            </tfoot>
-          </table>
+        <div className="compact-expense-list">
+          {expenses.lines.map((line) => (
+            <button
+              className="compact-expense-card"
+              key={line.id}
+              disabled={busy}
+              onClick={() => {
+                setEditingExpense(line)
+                setDraft(toRequest(line))
+                setShowAddModal(true)
+              }}
+            >
+              <div className="compact-expense-info">
+                <strong>{line.category}</strong>
+                <span>{line.detail || line.expenseGroup}</span>
+                <div className="compact-expense-badges">
+                  <span className="badge">{line.paymentMethod === 'CREDIT' ? 'Crédito' : 'Débito'}</span>
+                  <span className="badge">{EXPENSE_TYPE_LABELS[line.expenseType]}</span>
+                  {line.paymentMethod === 'CREDIT' && !line.countsTowardCardLimit && (
+                    <span className="badge">Crédito externo</span>
+                  )}
+                </div>
+              </div>
+              <div className="compact-expense-amount">
+                <strong>{line.currency === 'ARS' ? ars(line.amount) : usdPrecise(line.amount)}</strong>
+                <span>{line.currency === 'ARS' ? usdPrecise(line.amountUsd) : ars(line.amountArs)}</span>
+                <small>{percent(line.shareOfTotal)} del total</small>
+              </div>
+              <span className="compact-expense-chevron" aria-hidden>›</span>
+            </button>
+          ))}
+          {expenses.lines.length === 0 && (
+            <div className="compact-expense-empty">
+              <strong>Todavía no cargaste gastos</strong>
+              <span>Usá “Agregar gasto” para registrar el primero.</span>
+            </div>
+          )}
         </div>
+
+        {expenses.lines.length > 0 && (
+          <div className="compact-expense-total">
+            <span>Total de {expenses.lines.length} {expenses.lines.length === 1 ? 'gasto' : 'gastos'}</span>
+            <div><strong>{ars(expenses.totalArs)}</strong><span>{usdPrecise(expenses.totalUsd)}</span></div>
+          </div>
+        )}
       </Panel>
 
       <Panel title="Distribución por grupo" note="Ordenado de mayor a menor, medido en dólares.">

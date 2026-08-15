@@ -777,6 +777,237 @@ button.danger:hover:not(:disabled) {
   margin-top: 14px;
 }
 
+/* --- Modal ---------------------------------------------------------- */
+
+.modal-backdrop {
+  align-items: center;
+  background: rgba(0, 0, 0, 0.68);
+  display: flex;
+  inset: 0;
+  justify-content: center;
+  padding: 20px;
+  position: fixed;
+  z-index: 100;
+}
+
+.expense-modal {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.4);
+  max-height: calc(100vh - 40px);
+  max-width: 720px;
+  overflow-y: auto;
+  padding: 22px;
+  width: 100%;
+}
+
+.modal-head {
+  align-items: flex-start;
+  display: flex;
+  gap: 16px;
+  justify-content: space-between;
+}
+
+.modal-head h2 {
+  font-size: 20px;
+  margin: 0;
+}
+
+.modal-head p {
+  color: var(--text-secondary);
+  font-size: 13px;
+  margin: 5px 0 0;
+}
+
+.modal-close {
+  background: transparent;
+  border-color: transparent;
+  color: var(--text-muted);
+  font-size: 25px;
+  line-height: 1;
+  padding: 2px 6px;
+}
+
+.modal-form-grid {
+  display: grid;
+  gap: 14px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  margin-top: 22px;
+}
+
+.modal-actions {
+  align-items: center;
+  border-top: 1px solid var(--border);
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+  margin-top: 22px;
+  padding-top: 16px;
+}
+
+.modal-delete {
+  margin-right: auto;
+}
+
+/* --- Compact expense cards ----------------------------------------- */
+
+.compact-expense-list {
+  display: grid;
+  gap: 9px;
+  margin-top: 20px;
+}
+
+.compact-expense-card {
+  align-items: center;
+  background: var(--surface-sunken);
+  border-color: var(--border);
+  border-radius: var(--radius);
+  display: grid;
+  gap: 16px;
+  grid-template-columns: minmax(0, 1fr) auto 12px;
+  padding: 14px 16px;
+  text-align: left;
+  width: 100%;
+}
+
+.compact-expense-card:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--series-1-wash) 55%, var(--surface-sunken));
+  border-color: color-mix(in srgb, var(--series-1) 42%, var(--border));
+}
+
+.compact-expense-info,
+.compact-expense-amount {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.compact-expense-info > strong {
+  font-size: 15px;
+}
+
+.compact-expense-info > span {
+  color: var(--text-secondary);
+  font-size: 13px;
+  margin-top: 2px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.compact-expense-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  margin-top: 8px;
+}
+
+.compact-expense-amount {
+  text-align: right;
+}
+
+.compact-expense-amount strong {
+  font-size: 17px;
+}
+
+.compact-expense-amount span,
+.compact-expense-amount small {
+  color: var(--text-muted);
+  font-size: 12px;
+}
+
+.compact-expense-chevron {
+  color: var(--text-muted);
+  font-size: 24px;
+}
+
+.compact-expense-total {
+  align-items: center;
+  border-top: 1px solid var(--border);
+  color: var(--text-secondary);
+  display: flex;
+  font-size: 13px;
+  justify-content: space-between;
+  margin-top: 14px;
+  padding-top: 14px;
+}
+
+.compact-expense-total > div {
+  display: flex;
+  flex-direction: column;
+  text-align: right;
+}
+
+.compact-expense-total strong {
+  color: var(--text-primary);
+  font-size: 16px;
+}
+
+.compact-expense-total > div span {
+  color: var(--text-muted);
+  font-size: 12px;
+}
+
+.compact-expense-empty {
+  align-items: center;
+  border: 1px dashed var(--border);
+  border-radius: var(--radius);
+  color: var(--text-secondary);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 34px 20px;
+  text-align: center;
+}
+
+.compact-expense-empty span {
+  color: var(--text-muted);
+  font-size: 13px;
+}
+
+@media (max-width: 620px) {
+  .modal-backdrop {
+    align-items: flex-end;
+    padding: 0;
+  }
+
+  .expense-modal {
+    border-bottom-left-radius: 0;
+    border-bottom-right-radius: 0;
+    max-height: 92vh;
+    padding: 20px 16px;
+  }
+
+  .modal-form-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .compact-expense-card {
+    gap: 10px;
+    grid-template-columns: minmax(0, 1fr) 10px;
+  }
+
+  .compact-expense-amount {
+    grid-column: 1;
+    text-align: left;
+  }
+
+  .compact-expense-chevron {
+    grid-column: 2;
+    grid-row: 1 / span 2;
+  }
+
+  .modal-actions {
+    flex-wrap: wrap;
+  }
+
+  .modal-delete {
+    margin-right: 0;
+    width: 100%;
+  }
+}
+
 /* --- Badges & misc -------------------------------------------------- */
 
 .badge {
